@@ -3,6 +3,7 @@ from PIL import Image
 import pytesseract
 import os
 import re
+from collections import Counter
 import logging
 import sys
 from datetime import datetime
@@ -31,70 +32,132 @@ logger = logging.getLogger(__name__)
 SUPPORTED_EXTENSIONS = ('.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm')
 
 
+TS_RE = re.compile(r"(\d{4})\D(\d{2})\D(\d{2})\D+(\d{2})\D(\d{2})\D(\d{2})")
+
+
 def parseTimestamp(text):
-    """Searches for a YYYY-MM-DD HH:MM:SS timestamp pattern in OCR text."""
-    m = re.search(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", text)
-    if m:
-        try:
-            dt = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
-            return True, dt
-        except ValueError:
-            return False, None
-    return False, None
+    """Finds a YYYY-MM-DD HH:MM:SS timestamp in OCR text, tolerating odd separators."""
+    m = TS_RE.search(text)
+    if not m:
+        return False, None
+    try:
+        dt = datetime(*map(int, m.groups()))
+    except ValueError:
+        return False, None
+    if not (2000 <= dt.year <= datetime.now().year + 1):
+        return False, None
+    return True, dt
+FRAMES_TO_READ = 7      # max consecutive frames to sample per video
+AGREE_NEEDED = 2        # identical reads required before a timestamp is accepted
+# (height_fraction, width_fraction) crops from the top-left corner, tightest first
+ROI_CANDIDATES = [(0.07, 0.35), (0.10, 0.45), (0.15, 0.75)]
+_winner = None          # (crop_index, label, psm) that last produced an agreed read
+
+
+def make_variants(roi):
+    """Returns {label: image}: preprocessing variants of the cropped region."""
+    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    out = {}
+    for scale in (1, 3):
+        g = gray if scale == 1 else cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+        out[f"gray x{scale}"] = g
+        out[f"gray-inv x{scale}"] = cv2.bitwise_not(g)
+        for t in (150, 180, 200, 220, 240):
+            _, m = cv2.threshold(g, t, 255, cv2.THRESH_BINARY)
+            out[f"white>{t} x{scale}"] = cv2.bitwise_not(m)   # black text on white
+    return out
+
+
+def _crop(frame, crop_idx):
+    h, w = frame.shape[:2]
+    hf, wf = ROI_CANDIDATES[crop_idx]
+    return frame[0:int(h * hf), 0:int(w * wf)]
+
+
+def _ocr(img, psm):
+    img = cv2.copyMakeBorder(img, 20, 20, 20, 20, cv2.BORDER_REPLICATE)
+    return pytesseract.image_to_string(img, config=f"--psm {psm}")
+
+
+def ocr_timestamp(frame):
+    """Returns (datetime or None, config_used or None, raw_text). Tries the cached config first."""
+    if _winner:
+        ci, label, psm = _winner
+        text = _ocr(make_variants(_crop(frame, ci))[label], psm)
+        ok, dt = parseTimestamp(text)
+        if ok:
+            return dt, _winner, text
+
+    text = ""
+    for ci in range(len(ROI_CANDIDATES)):
+        for label, img in make_variants(_crop(frame, ci)).items():
+            for psm in (7, 6):
+                text = _ocr(img, psm)
+                ok, dt = parseTimestamp(text)
+                if ok:
+                    return dt, (ci, label, psm), text
+    return None, None, text
 
 
 def extract_first_frame_only(video_path, output_dir, save_images=False, progress_callback=None):
-    """
-    Testing Mode: Processes ONLY the first frame via OpenCV for rapid pipeline validation.
-    """
+    """Testing Mode: reads up to FRAMES_TO_READ frames and accepts a timestamp only when frames agree."""
+    global _winner
     video_name = os.path.splitext(os.path.basename(video_path))[0]
     os.makedirs(output_dir, exist_ok=True)
-    
+
     if progress_callback:
         progress_callback(f"Opening video stream for {video_name}...")
 
     cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        return False, {"video": video_name, "error": "Could not open video file (moov atom or header issue)."}
-    
-    fps = cap.get(cv2.CAP_PROP_FPS) or 25
-    ret, first_frame_img = cap.read()
-    cap.release()
+    first_frame = None
+    reads = []          # one parsed datetime per frame that OCR could read
+    accepted = None     # (datetime, agree_count, frames_used, config)
+    try:
+        if not cap.isOpened():
+            return False, {"video": video_name, "error": "Could not open video file (moov atom or header issue)."}
+        for i in range(FRAMES_TO_READ):
+            ret, frame = cap.read()
+            if not ret or frame is None:
+                break
+            if first_frame is None:
+                first_frame = frame
+            dt, cfg, _text = ocr_timestamp(frame)
+            if dt is None:
+                continue
+            reads.append((dt, cfg))
+            value, count = Counter(d for d, _ in reads).most_common(1)[0]
+            if count >= AGREE_NEEDED:
+                accepted = (value, count, i + 1, cfg)
+                break
+    finally:
+        cap.release()
 
-    if not ret or first_frame_img is None:
-        return False, {"video": video_name, "error": "Failed to capture the first frame from video stream."}
+    if first_frame is None:
+        return False, {"video": video_name, "error": "Failed to read the first frame."}
 
-    temp_crop_file = "temp_ocr_crop.bmp"
-    height, width = first_frame_img.shape[:2]
-    roi = first_frame_img[0:int(height * 0.12), 0:int(width * 0.45)]
-    cv2.imwrite(temp_crop_file, roi)
+    if accepted is None:
+        seen = [d.strftime('%H:%M:%S') for d, _ in reads] or "nothing parseable"
+        return False, {"video": video_name,
+                       "error": f"No {AGREE_NEEDED} frames agreed. Reads: {seen}"}
 
-    text = pytesseract.image_to_string(Image.open(temp_crop_file))
-    success, dt = parseTimestamp(text)
-
-    if os.path.exists(temp_crop_file):
-        os.remove(temp_crop_file)
-
-    if not dt:
-        dt = datetime.now()
+    dt, count, frames_used, cfg = accepted
+    _winner = cfg       # try this config first on the next video
+    ci, label, psm = cfg
 
     saved_files = []
     if save_images:
         p1 = os.path.join(output_dir, f"{video_name}_first_frame.jpg")
-        cv2.imwrite(p1, first_frame_img)
+        cv2.imwrite(p1, first_frame)
         saved_files.append(p1)
 
     summary = {
         "video": video_name,
-        "duration_secs": 0.0,
-        "fps": fps,
         "start_time": dt.strftime('%Y-%m-%d %H:%M:%S'),
         "end_time": "Testing Mode (First Frame Only)",
+        "ocr_method": f"{count}/{frames_used} frames agreed; crop {ci}, {label}, psm {psm}",
         "saved_images": saved_files
     }
-
     return True, summary
-
 
 class OCRAppGUI:
     def __init__(self, root):
@@ -218,6 +281,7 @@ class OCRAppGUI:
         self.root.update_idletasks()
 
         run_date_str = datetime.now().strftime('%Y-%m-%d_%H-%M')
+        os.makedirs(output_path, exist_ok=True)
         output_txt_file = os.path.join(output_path, f"extracted_timestamps_test_{run_date_str}.txt")
 
         success_count = 0
@@ -229,15 +293,18 @@ class OCRAppGUI:
                     v_name = os.path.basename(v_path)
                     self.log(f"Processing (First Frame Test): {v_name}...")
                     
-                    success, result = extract_first_frame_only(
-                        v_path, output_path, 
-                        save_images=save_images_flag, 
-                        progress_callback=lambda msg: self.log(f"   [->] {msg}")
-                    )
+                    try:
+                        success, result = extract_first_frame_only(
+                            v_path, output_path,
+                            save_images=save_images_flag,
+                            progress_callback=lambda msg: self.log(f"   [->] {msg}")
+                        )
+                    except Exception as e:
+                        success, result = False, {"video": v_name, "error": f"{type(e).__name__}: {e}"}
 
                     if success:
                         success_count += 1
-                        self.log(f"   [SUCCESS] Detected Timestamp: {result['start_time']}")
+                        self.log(f"   [SUCCESS] Detected Timestamp: {result['start_time']} (via {result['ocr_method']})")
                         if save_images_flag:
                             self.log(f"      [SNAPSHOT] First frame snapshot saved.")
                         out_f.write(f"{result['video']}, First Frame Timestamp: {result['start_time']}\n")
