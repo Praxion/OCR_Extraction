@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRData Guide – Clements Marketplace</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #171b26;
+    --surface2: #1e2335;
+    --border: #2a3050;
+    --accent: #4f8ef7;
+    --accent2: #e84c3d;
+    --accent3: #f5a623;
+    --green: #2dc98e;
+    --text: #e8ecf4;
+    --text-muted: #7a87a8;
+    --text-dim: #4a5578;
+    --host-color: #4f8ef7;
+    --store-color: #2dc98e;
+    --ref-color: #f5a623;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,.4);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-badge {
+    background: var(--accent);
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: .05em;
+  }
+  .logo-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: var(--text);
+  }
+  .logo-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+  header .store-badges {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+  }
+  .store-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: .04em;
+  }
+  .badge-portsmouth { background: rgba(79,142,247,.15); color: var(--accent); border: 1px solid rgba(79,142,247,.3); }
+  .badge-bristol { background: rgba(45,201,142,.15); color: var(--green); border: 1px solid rgba(45,201,142,.3); }
+
+  /* ── Tab Nav ── */
+  .tab-nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 2px;
+    padding: 0 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 14px 18px;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color .2s, border-color .2s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+  .tab-btn .tab-icon { font-size: 15px; }
+
+  /* Color variants for tabs */
+  .tab-btn[data-tab="host"].active { border-bottom-color: var(--host-color); color: var(--host-color); }
+  .tab-btn[data-tab="store"].active { border-bottom-color: var(--store-color); color: var(--store-color); }
+  .tab-btn[data-tab="tags"].active { border-bottom-color: var(--accent3); color: var(--accent3); }
+  .tab-btn[data-tab="price-today"].active { border-bottom-color: #c77dff; color: #c77dff; }
+  .tab-btn[data-tab="price-future"].active { border-bottom-color: #f72585; color: #f72585; }
+  .tab-btn[data-tab="reports"].active { border-bottom-color: var(--green); color: var(--green); }
+  .tab-btn[data-tab="reference"].active { border-bottom-color: var(--ref-color); color: var(--ref-color); }
+
+  /* ── Content ── */
+  .content { max-width: 900px; margin: 0 auto; padding: 36px 24px 80px; }
+
+  .tab-panel { display: none; animation: fadeIn .25s ease; }
+  .tab-panel.active { display: block; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Section titles ── */
+  .page-title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    margin-bottom: 6px;
+  }
+  .page-subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  /* ── Info cards (what/why) ── */
+  .card-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  @media(max-width:600px){ .card-row { grid-template-columns: 1fr; } }
+
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .info-card .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .1em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .info-card p { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+  .info-card strong { color: var(--text); }
+
+  /* ── Steps ── */
+  .steps-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .step::before {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 36px;
+    bottom: -20px;
+    width: 2px;
+    background: var(--border);
+  }
+  .step:last-child::before { display: none; }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-body { flex: 1; padding-top: 6px; }
+  .step-body h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .step-body p { font-size: 14px; color: var(--text-muted); }
+  .step-body .note {
+    margin-top: 8px;
+    background: rgba(79,142,247,.08);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .step-body .warn {
+    margin-top: 8px;
+    background: rgba(245,166,35,.08);
+    border-left: 3px solid var(--accent3);
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .step-body .danger {
+    margin-top: 8px;
+    background: rgba(232,76,61,.08);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .step-body .success {
+    margin-top: 8px;
+    background: rgba(45,201,142,.08);
+    border-left: 3px solid var(--green);
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* code inline */
+  code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent3);
+  }
+
+  /* ── Reference Tables ── */
+  .ref-section { margin-bottom: 36px; }
+  .ref-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ref-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--surface);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  thead tr { background: var(--surface2); }
+  th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  td {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  td:first-child {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent3);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  td.dept-name { color: var(--text); font-weight: 500; font-family: 'Outfit', sans-serif; font-size: 14px; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* colored dept IDs */
+  .dept-red { color: var(--accent2) !important; }
+  .dept-blue { color: var(--accent) !important; }
+
+  /* ── Templates grid ── */
+  .template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .template-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+  }
+  .template-card .t-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .template-card .t-name {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .template-card .t-use {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .template-card.ad { border-left: 3px solid var(--accent2); }
+  .template-card.instore { border-left: 3px solid var(--accent); }
+  .template-card.shelf { border-left: 3px solid var(--green); }
+
+  /* ── Tax table ── */
+  .tax-table td.tax-yes { color: var(--accent2); font-weight: 600; }
+  .tax-table td.tax-no { color: var(--green); font-weight: 600; }
+
+  /* ── Separator ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 28px 0;
+  }
+
+  /* ── Sub-nav (for split topics) ── */
+  .sub-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .sub-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .sub-btn:hover { border-color: var(--accent); color: var(--text); }
+  .sub-btn.active { background: rgba(79,142,247,.12); border-color: var(--accent); color: var(--accent); }
+
+  .sub-panel { display: none; }
+  .sub-panel.active { display: block; }
+
+  /* color accents per tab */
+  [data-tab="store"] .step-num { color: var(--store-color); }
+  [data-tab="tags"] .step-num { color: var(--accent3); }
+  [data-tab="price-today"] .step-num { color: #c77dff; }
+  [data-tab="price-future"] .step-num { color: #f72585; }
+  [data-tab="reports"] .step-num { color: var(--green); }
+
+  /* ── Field quick-ref chips ── */
+  .field-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .field-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-muted);
+  }
+  .field-chip span { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-badge">BR</span>
+    <div>
+      <div class="logo-title">BRData Guide</div>
+      <div class="logo-sub">Clements Marketplace</div>
+    </div>
+  </div>
+  <div class="store-badges">
+    <span class="store-badge badge-portsmouth">Store #3 Portsmouth</span>
+    <span class="store-badge badge-bristol">Store #4 Bristol</span>
+  </div>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="overview"><span class="tab-icon">🏠</span> Overview</button>
+  <button class="tab-btn" data-tab="host"><span class="tab-icon">💻</span> HOST – New Items</button>
+  <button class="tab-btn" data-tab="store"><span class="tab-icon">🏪</span> STORE – Instores</button>
+  <button class="tab-btn" data-tab="tags"><span class="tab-icon">🏷️</span> Tags & Signs</button>
+  <button class="tab-btn" data-tab="price-today"><span class="tab-icon">💲</span> Price Change (Today)</button>
+  <button class="tab-btn" data-tab="price-future"><span class="tab-icon">📅</span> Price Change (Future)</button>
+  <button class="tab-btn" data-tab="reports"><span class="tab-icon">📊</span> Reports</button>
+  <button class="tab-btn" data-tab="reference"><span class="tab-icon">📋</span> Reference</button>
+</nav>
+
+<!-- ══════════════════════════════════════════════ OVERVIEW ══════ -->
+<div class="content">
+
+<div class="tab-panel active" id="tab-overview">
+  <div class="page-title">BRData System Overview</div>
+  <div class="page-subtitle">Clements Marketplace – Portsmouth &amp; Bristol</div>
+
+  <div class="card-row">
+    <div class="info-card">
+      <div class="card-label" style="color:var(--host-color)">BRData HOST</div>
+      <p><strong>What:</strong> Where you enter <strong>NEW items</strong>, make price changes, create Links, and where AD sales run through.</p>
+      <p style="margin-top:8px"><strong>Why:</strong> HOST connects Portsmouth &amp; Bristol together — keeps both stores in sync on items and pricing.</p>
+    </div>
+    <div class="info-card">
+      <div class="card-label" style="color:var(--store-color)">BRData STORE</div>
+      <p><strong>What:</strong> Where you enter <strong>Manager Instores</strong>, take off instore sales, and make signs/tags.</p>
+      <p style="margin-top:8px"><strong>Why:</strong> STORE is at "Store Level" — instore sales only reflect in the Portsmouth store.</p>
+      <p style="margin-top:8px; font-size:12px; color:var(--text-dim)">Store #4 Bristol &nbsp;|&nbsp; Store #3 Portsmouth</p>
+    </div>
+  </div>
+
+  <div class="card-row">
+    <div class="info-card" style="background:rgba(79,142,247,.06)">
+      <div class="card-label" style="color:var(--accent)">🔑 Key Concepts</div>
+      <p style="margin-top:4px; font-size:13px">
+        • <strong>Batch #</strong> – every action is tied to a numbered batch<br>
+        • <strong>UPC</strong> – Short UPCs: drop first digit. Long/European UPCs: drop last digit. When in doubt, always scan it.<br>
+        • <strong>LINK</strong> – groups of UPCs with the same pricing<br>
+        • <strong>Instore</strong> – store-level sale using the Shoppers Card<br>
+        • <strong>WSL</strong> – "While Supplies Last"
+      </p>
+    </div>
+    <div class="info-card" style="background:rgba(245,166,35,.06)">
+      <div class="card-label" style="color:var(--accent3)">⚡ Quick Nav</div>
+      <p style="font-size:13px; margin-top:4px">Click a tab above to jump directly to any process. The <strong>Reference</strong> tab has all department codes, store numbers, tax rules, and print templates in one place.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ HOST – NEW ITEMS ══════ -->
+<div class="tab-panel" id="tab-host">
+  <div class="page-title" style="color:var(--host-color)">HOST – Adding New Items</div>
+  <div class="page-subtitle">Use BRData HOST to enter new items. Changes push to both stores.</div>
+
+  <div class="sub-tabs">
+    <button class="sub-btn active" data-sub="new-item-manual">Manual Entry</button>
+    <button class="sub-btn" data-sub="new-item-block">Block Copy (Friend Item)</button>
+    <button class="sub-btn" data-sub="export">Exporting a Batch</button>
+    <button class="sub-btn" data-sub="link">Creating a Link</button>
+  </div>
+
+  <!-- Manual Entry -->
+  <div class="sub-panel active" id="sub-new-item-manual">
+    <div class="steps-title">Step-by-step: Entering a New Item Manually</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Open BRData HOST → Product Master</h4>
+        <p>Launch BRData HOST and navigate to <code>BRData Host → Product Master</code>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Enter Batch # and Description, then click OK</h4>
+        <p>Type in your batch number, add a description, then click <strong>OK</strong>. The system will populate a new screen.</p>
+	<img src="BR_DATA_Man_Entry_Step2.png" alt="Entry/Batch Information Tab" width="500" height="600" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Type the UPC in the "Search For" box → ENTER</h4>
+        <p>Enter the UPC code and press <strong>ENTER</strong> on your keyboard.</p>
+        <div class="note">
+          <strong>UPC Tips:</strong> Short UPCs – drop the first small digit. Long/European UPCs – drop the last digit. When in doubt, always scan it when done.
+	<img src="BR_DATA_Man_Entry_Step3.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+	
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Confirm "Add the Item" prompt</h4>
+        <p>A box will appear asking if you want to add the item. Click <strong>ENTER</strong> again or click <strong>Add the Item</strong>.</p>
+	<img src="BR_DATA_Man_Entry_Step4.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Fill in the required fields</h4>
+        <div class="field-list">
+          <div class="field-chip"><span>Dep/Sub</span> – Department</div>
+          <div class="field-chip"><span>Cat/Sub</span> – Subcategory</div>
+          <div class="field-chip"><span>Size(Alpha)</span> – Size</div>
+          <div class="field-chip"><span>MLink</span> – Link #</div>
+          <div class="field-chip"><span>Description</span></div>
+          <div class="field-chip"><span>POS Desc</span></div>
+        </div>
+	<img src="BR_DATA_Man_Entry_Step5.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+	<strong>Note:</strong> The image provided of BR DATA is of the store level not the HOST.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h4>Click "Save"</h4>
+        <p>Once all information is filled out, click <strong>Save</strong>.</p>
+	<img src="BR_DATA_Man_Entry_Step6.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <h4>Enter the retail price → Save</h4>
+        <p>A new screen will appear — enter the retail price on the <strong>left-hand side only</strong> where the store numbers appear (000003 and 000004). Once finished press <strong>Save</strong>.</p>
+        <div class="warn">Only enter retail in rows where the store numbers are shown (000003 Portsmouth, 000004 Bristol). If they are in 00000A it will apply to all stores available.</div>
+	<img src="BR_DATA_Man_Entry_Step7.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Block Copy -->
+  <div class="sub-panel" id="sub-new-item-block">
+    <div class="steps-title">Block Copy – Using a "Friend" Item</div>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:20px">If you have a similar existing item, you can COPY/BLOCKCOPY it to speed up entry. Most fields will carry over; you'll only need to update size and UPC.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Type the "friend" UPC in the "Search For" box → ENTER</h4>
+        <p>Find the similar item you want to copy from.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Click the double block icon</h4>
+        <p>Click the <strong>Block Copy</strong> icon in the toolbar (double-block icon).</p>
+	<img src="BR_DATA_Block_Copy_Step2.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Enter the new UPC in the "UPC Code" box</h4>
+        <p>All fields will copy from the "friend." The only field that may change is SIZE (Dep/Sub, Cat/Sub, Size(Alpha), Description, POS Description).</p>
+        <img src="BR_DATA_Block_Copy_Step3.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Watch for Instores &amp; sign items</h4>
+        <div class="warn">Keep an eye out for "Instore" and "sale" items — they may need a sign printed.</div>
+	<img src="BR_DATA_Block_Copy_Step4.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+	<strong>Note:</strong> The image used for this example is based on Store not Host.
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Follow steps 6 &amp; 7 for adding a retail price</h4>
+        <p>Complete the same Save and retail entry steps as manual entry (steps 6 &amp; 7 above).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="sub-panel" id="sub-export">
+    <div class="steps-title">Exporting a New Item Batch FROM BRData HOST</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>BRData HOST → Export Batches → Selected Batches → Accept</h4>
+        <p>Navigate through the Export Batches menu and select the batch.</p>
+        <img src="BR_DATA_Export_Batch_Step1.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Check off your Batch # → Accept again → Export Batches</h4>
+        <p>Check (√) your batch number, accept again, then click Export Batches.</p>
+        <img src="BR_DATA_Export_Batch_Step2.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Verify both stores are selected</h4>
+        <p>Make sure the batch sends to BOTH stores. When export is done, press <strong>OK</strong>.</p>
+        <div class="success">Both stores should show: 000003 Portsmouth &amp; 000004 Bristol.</div>
+        <img src="BR_DATA_Export_Batch_Step3.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="steps-title">⚠️ If the Batch Doesn't Export (Blank Status Box)</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Click "Store Selection"</h4>
+        <p>In the Export screen, click the <strong>Store Selection</strong> tab.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Make sure ALL stores are checked in the "Selected Stores" box</h4>
+        <p>Check that 000003 Portsmouth and 000004 Bristol are both checked/selected.</p>
+        <div class="danger">If the status box is blank after export, the batch did NOT go through — re-export after verifying store selection.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Export batch like normal once stores are confirmed</h4>
+      </div>
+    </div>
+  </div>
+
+  <!-- Link -->
+  <div class="sub-panel" id="sub-link">
+    <div class="steps-title">Creating a LINK in BRData HOST</div>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:20px">A Link groups UPCs that share the same pricing so a single price change updates all items in the group.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>BRData Store → File Setup Maint. → E. Link Code Maint.</h4>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Click "NEW"</h4>
+        <p>Click NEW to start a new link entry.</p>
+        <div class="note">Bristol series range = __________ Enter # (fill in from your list)</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Ignore LINK XREF and BRAND fields</h4>
+        <p style="color:var(--accent2)">Leave these fields blank.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Enter Description in CAP LETTERS → ACCEPT</h4>
+        <div class="warn">Glitch note: You have to exit out and go back in, then scroll to find the Link #.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="steps-title">Printing a Link and Its UPCs</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>BRData → File Setup Maint. → 4. Link Master</h4>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Search For: enter Link # → √ Print Linked Items</h4>
+        <p>Select "Print" or "Print Preview" from the icons at the top.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ STORE – INSTORES ══════ -->
+<div class="tab-panel" id="tab-store">
+  <div class="page-title" style="color:var(--store-color)">STORE – Manager Instores</div>
+  <div class="page-subtitle">Use BRData STORE for manager instore sales. Instore = Shoppers Card sale.</div>
+
+  <div class="sub-tabs">
+    <button class="sub-btn active" data-sub="instore-on">Instore ON</button>
+    <button class="sub-btn" data-sub="instore-off">Instore OFF</button>
+    <button class="sub-btn" data-sub="tag-batch">Tag Batch</button>
+  </div>
+
+  <!-- Instore ON -->
+  <div class="sub-panel active" id="sub-instore-on">
+    <div class="steps-title">Turning a Manager Instore ON</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Open BRData Store → Product Master</h4>
+        <p>Launch BRData STORE and click <code>BRData → Product Master</code>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Check both top boxes → click "Next" for next batch #</h4>
+        <p>Check both checkboxes at the top. Click <strong>Next</strong> to get the next available batch number. Date will always be current day.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Fill in the batch settings</h4>
+        <div class="field-list">
+          <div class="field-chip"><span>Description</span> → "Instore On [vendor/dept/manager]" e.g. "Instore On Kraft"</div>
+          <div class="field-chip"><span>Batch Mode/Date Default</span> → Frequent Shopper</div>
+          <div class="field-chip"><span>Price End Date</span> → Enable Calendar Object → type 12/01/2029 (WSL date)</div>
+          <div class="field-chip"><span>Priority</span> → click [...] icon → select "Manager" priority 50</div>
+        </div>
+        <div class="note"><strong>Batch Mode = Frequent Shopper</strong> — This applies the sale every time the shopper card is used at the registers.</div>
+        <div class="note"><strong>Price End Date 12/01/2029</strong> — This is our "While Supplies Last" date.</div>
+        <img src="BR_DATA_Instore_On_Step3.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Click OK → Confirm YES</h4>
+        <p>A confirmation box will pop up — click <strong>YES</strong>. This tells you the sale will happen immediately.</p>
+        <img src="BR_DATA_Instore_On_Step4.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Enter UPC in "Search For" → ENTER</h4>
+        <img src="BR_DATA_INSTORE_ON_Step5.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h4>Enter sale retail in the "Future Prices" box → Save</h4>
+        <div class="note">Verify dates, modes, and prices before saving.</div>
+        <img src="BR_DATA_INSTORE_ON_Step6.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <h4>If item is on a Link</h4>
+        <p>All items in the link will pop up. <strong>Deselect</strong> if only putting that one item on sale, or <strong>Select All</strong> if the whole link gets the same sale.</p>
+        <img src="BR_DATA_INSTORE_ON_Step7.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Instore OFF -->
+  <div class="sub-panel" id="sub-instore-off">
+    <div class="steps-title">Turning a Manager Instore OFF</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Open BRData Store → Product Master</h4>
+        <p>Same entry path as Instore ON.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Check both boxes → Next → fill in Description</h4>
+        <p>Description = <strong>"Instore Off [vendor/dept/manager]"</strong> — e.g., "Instore Off Kraft". Click <strong>OK</strong>.</p>
+        <img src="BR_DATA_INSTORE_OFF_Step2.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Enter UPC → ENTER → click "Future Prices" box</h4>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>A new box will pop up showing all SALE retails</h4>
+        <p>Click the SALE you want to take OFF SALE so it highlights blue, then click <strong>DELETE</strong>.</p>
+        <div class="danger">Look out for other active sales that may overlap: AD, WAVE, SAVE. Only delete the instore you intend to remove.</div>
+        <img src="BR_DATA_INSTORE_OFF_Step4.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Confirm deletion → YES</h4>
+        <p>A box will confirm you want to take the item off sale. Click <strong>YES</strong>.</p>
+        <img src="BR_DATA_INSTORE_OFF_Step5.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h4>Back on Product Master → click SAVE</h4>
+        <p>If you have more items to take off sale, go through the process again. Once done, close out of Product Master.</p>
+        <img src="BR_DATA_INSTORE_OFF_Step6.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Tag Batch -->
+  <div class="sub-panel" id="sub-tag-batch">
+    <div class="steps-title">Tag Batch – Quick Way to Add UPCs for Tag Printing</div>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:20px">Tag Batch is a quick way to add UPCs to a batch to print tags/signs easily. It does <strong>NOT</strong> update item, price, or cost information — it only updates the batch.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Open BRData → Product Master</h4>
+        <p><strong>Uncheck</strong> "Direct Item Maintenance" and click <strong>Next</strong> for next available batch #. Date will always be current day.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Fill in Description and Batch Mode</h4>
+        <div class="field-list">
+          <div class="field-chip"><span>Description</span> → anything easy to remember e.g. "TAGS FOR PEPSI"</div>
+          <div class="field-chip"><span>Batch Mode/Date Default</span> → Tag Batch</div>
+          <img src="BR_DATA_Tag_Batch_Step2.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Click OK → then OK again on the notice</h4>
+        <p>A notice will appear reminding you this DOES NOT update item/price/cost info. Click <strong>OK</strong>.</p>
+        <img src="BR_DATA_Tag_Batch_Step3.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Type UPC in "Search For" → ENTER</h4>
+        <p>A box will pop up asking if you want to add the UPC to the batch. Click <strong>YES</strong>.</p>
+        <img src="BR_DATA_Tag_Batch_Step4.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>If item is on a Link — linked items will pop up</h4>
+        <p>Keep selected to add all linked items, or unselect to add only that one item. Click <strong>UPDATE</strong> when finished.</p>
+        <img src="BR_DATA_Tag_Batch_Step5.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h4>Add remaining UPCs → Close Product Master → Print tags/signs</h4>
+        <p>Follow the "Tags &amp; Signs" tab to print once all UPCs are in the batch.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ TAGS & SIGNS ══════ -->
+<div class="tab-panel" id="tab-tags">
+  <div class="page-title" style="color:var(--accent3)">Printing Tags &amp; Sale Signs</div>
+  <div class="page-subtitle">Use BRData STORE to print shelf tags and sale signs using Designer Labels (DRL).</div>
+
+  <div class="sub-tabs">
+    <button class="sub-btn active" data-sub="tags-batch">From a Batch</button>
+    <button class="sub-btn" data-sub="tags-daterange">By Date Range</button>
+  </div>
+
+  <div class="sub-panel active" id="sub-tags-batch">
+    <div class="steps-title">Printing from a Batch</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Open BRData Store → Batch File → OK</h4>
+        <p>Navigate to <code>BRData Store → Batch File</code> and click <strong>OK</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Click the batch you want → "Export Labels"</h4>
+        <p>Click the desired batch so it highlights blue, then click <strong>Export Labels</strong>.</p>
+        <img src="BR_DATA_Tags_&_Signs_Step2.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Confirm YES → then click "Print"</h4>
+        <p>A new box will pop up — click YES, then in the next box click <strong>Print</strong>.</p>
+        <img src="BR_DATA_Tags_&_Signs_Step3.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Designer Labels (DRL) opens with batch items</h4>
+        <p>This program will open all items from the batch you selected. Verify you opened the correct batch.</p>
+        <img src="BR_DATA_Tags_&_Signs_Step4.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Change descriptions if needed (sale signs only)</h4>
+        <p>Change descriptions <strong>ONLY</strong> if printing sale signs. For shelf tags, you don't need to change descriptions.</p>
+        <div class="note">Check items to select them for printing. You can select all items or check/uncheck individually.</div>
+        <img src="BR_DATA_Tags_&_Signs_Step5.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h4>Click "Assign Template" → double-click the template you want</h4>
+        <p>A pop-up will show all available templates. See the Template Reference section below.</p>
+        <img src="BR_DATA_Tags_&_Signs_Step7.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <h4>Print using QuickQ or "Advanced Printing"</h4>
+        <p>Use the <strong>quick print icon</strong> (QuickQ) for normal printing, or <strong>Advanced Printing</strong> if you want to print on a specific row.</p>
+        <img src="BR_DATA_Tags_&_Signs_Step8.png" alt="Entry/Batch Information Tab" style="padding: 20px; border: 2px solid #000;">
+      </div>
+    </div>
+  </div>
+
+  <div class="sub-panel" id="sub-tags-daterange">
+    <div class="steps-title">Printing Signs Using a Date Range</div>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>BRData Store → Export Item File and Labels</h4>
+        <p>Navigate through the QUERY TAB. Enter a Process Date (batch starting date).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>BY Batch: Enter From &amp; To Dates and Batch # → OK</h4>
+        <p>Your batch should pop up — verify, select to highlight, and click <strong>OK</strong>. The Batch Items Selection Box will pop up — click <strong>ACCEPT</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>EXPORT TAB settings</h4>
+        <div class="field-list">
+          <div class="field-chip"><span>√</span> Export Label File</div>
+          <div class="field-chip"><span>√</span> Print After (auto pop-up)</div>
+          <div class="field-chip"><span>√</span> Movement Only</div>
+        </div>
+        <p style="margin-top:8px; font-size:14px; color:var(--text-muted)">Click <strong>Process</strong> → SALES MOVEMENT box pops up → enter date range you want → <strong>ACCEPT</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Let it process → OK → PRINT</h4>
+        <p>Once the Completed Export of Label File BOX appears, click <strong>OK</strong>, then <strong>PRINT</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="ref-section">
+    <div class="ref-section-title" style="color:var(--accent3)">Print Template Guide</div>
+    <div class="template-grid">
+      <div class="template-card ad">
+        <div class="t-num">Templates 1–4</div>
+        <div class="t-name">AD Signs</div>
+        <div class="t-use">Specifically made for AD signs (CLEMLargeRed, CLEMMediumRed, CLEMSmallRed, CLEM9UP RadYell)</div>
+      </div>
+      <div class="template-card instore">
+        <div class="t-num">Templates 5–8</div>
+        <div class="t-name">Instore / WSL Signs</div>
+        <div class="t-use">WSL = "While Supplies Last" — for instore manager sales (WSL CLEMLarge, WSL CLEMMedium, WSL CLEM9UP, WSL CLEMSmall)</div>
+      </div>
+      <div class="template-card shelf">
+        <div class="t-num">SHELF TAG BOX for VENDOR</div>
+        <div class="t-name">Shelf Tags</div>
+        <div class="t-use">Specifically for shelf tags only (bristol shelf tags form)</div>
+      </div>
+      <div class="template-card shelf">
+        <div class="t-num">SHELF TAG NO VENDOR</div>
+        <div class="t-name">Shelf Tags (No Vendor)</div>
+        <div class="t-use">CLEMShelfTag form</div>
+      </div>
+      <div class="template-card ad">
+        <div class="t-num">9WAVE 9UP / 9WAVE Medium</div>
+        <div class="t-name">Wave Signs</div>
+        <div class="t-use">9up Wave / CLEMMedium forms</div>
+      </div>
+      <div class="template-card ad">
+        <div class="t-num">DISPLAY 1/2/9UP</div>
+        <div class="t-name">Display Signs</div>
+        <div class="t-use">Various display sign formats</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ PRICE CHANGE TODAY ══════ -->
+<div class="tab-panel" id="tab-price-today">
+  <div class="page-title" style="color:#c77dff">Price Change – Current Day</div>
+  <div class="page-subtitle">Making a price change batch in BRData HOST for the same day it takes effect.</div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Open BRData HOST → Product Master</h4>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Create the batch</h4>
+      <div class="field-list">
+        <div class="field-chip"><span>Batch Number</span> → enter batch #</div>
+        <div class="field-chip"><span>Batch/Activation Date</span> → CURRENT DATE (auto-filled)</div>
+        <div class="field-chip"><span>Description</span> → PRICE CHANGES</div>
+        <div class="field-chip"><span>Batch Mode</span> → Future Retail Price</div>
+      </div>
+      <p style="margin-top:8px; font-size:14px; color:var(--text-muted)">Then click <strong>OK</strong>.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Enter UPC in "Search For" → ENTER</h4>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Enter new retail on RIGHT SIDE for both stores → SAVE</h4>
+      <p>A new window will pop up. Enter the new retail on the right side only for the two stores, then press <strong>SAVE</strong>.</p>
+      <div class="note">If the item is attached to a Link, click <strong>UPDATE ALL</strong>.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h4>The change saves when you see it populate on the right side</h4>
+      <p>You'll see the new retail, date of batch, and batch number appear on the right side.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <h4>Repeat for each UPC → close Product Master</h4>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <h4>BRData Host → View-Apply Future Prices</h4>
+      <p>A new window opens. Click <strong>SELECT</strong>, then select your batch and click <strong>OK</strong>.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">8</div>
+    <div class="step-body">
+      <h4>Confirm YES → OK → Apply Prices</h4>
+      <p>A confirmation pops up asking you to confirm. Click <strong>YES</strong>, then click <strong>OK</strong>. The last screen shows again — use <strong>SHIFT + down arrow</strong> to highlight all items on the batch blue, then click <strong>APPLY PRICES</strong>.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">9</div>
+    <div class="step-body">
+      <h4>Confirm YES again → EXIT → Export batch to stores</h4>
+      <div class="success">EXIT the page and export the batch to the stores as normal.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ PRICE CHANGE FUTURE ══════ -->
+<div class="tab-panel" id="tab-price-future">
+  <div class="page-title" style="color:#f72585">Price Change – Future Dates</div>
+  <div class="page-subtitle">Making a price change batch in BRData HOST for a future date. It will auto-export on that day.</div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Have your price changes (sent by Brian) ready</h4>
+      <p>Make sure you have the price change list in front of you before starting.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Open BRData HOST → Product Master</h4>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Create the batch</h4>
+      <div class="field-list">
+        <div class="field-chip"><span>Batch Number</span> → enter batch #</div>
+        <div class="field-chip"><span>Batch/Activation Date</span> → enter the date you are making the changes for</div>
+        <div class="field-chip"><span>Description</span> → PRICE CHANGES</div>
+        <div class="field-chip"><span>Batch Mode</span> → Future Retail Price</div>
+      </div>
+      <p style="margin-top:8px; font-size:14px; color:var(--text-muted)">Click <strong>OK</strong>.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Enter UPC in "Search For" → ENTER</h4>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h4>Enter new retail on right side for both stores → SAVE</h4>
+      <p>Same as current-day price change — enter retail on the right side only for the two stores.</p>
+      <div class="note">If attached to a Link, click <strong>UPDATE ALL</strong>.</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <h4>Confirm save by seeing it populate on the right side</h4>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <h4>Repeat for each UPC → close Product Master</h4>
+      <div class="success">Since you made a batch with a future date it will <strong>automatically export that day</strong>. Send an email to all stores with the date of the price change batch and batch number so they know when to change tags.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ REPORTS ══════ -->
+<div class="tab-panel" id="tab-reports">
+  <div class="page-title" style="color:var(--green)">BRData Reports</div>
+  <div class="page-subtitle">BRData Store → Reports → 1 Sales Movement History. Note: *Cannot check for live date.*</div>
+
+  <div class="sub-tabs">
+    <button class="sub-btn active" data-sub="report-general">General Report</button>
+    <button class="sub-btn" data-sub="report-comparison">Date Comparison</button>
+    <button class="sub-btn" data-sub="report-topsellers">Top/Worst Sellers</button>
+  </div>
+
+  <!-- General -->
+  <div class="sub-panel active" id="sub-report-general">
+    <div class="steps-title">General Sales Report</div>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:20px">Path: <code>BRData Store → Reports → 1 Sales Movement History</code></p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Enter From Date &amp; To Date</h4>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>QUERY TAB — Process By</h4>
+        <div class="field-list">
+          <div class="field-chip">*UPC</div>
+          <div class="field-chip">*LINK (use AAM Query — need Link #)</div>
+          <div class="field-chip">*Category/Sub Code (for sub-departments)</div>
+          <div class="field-chip">*Enhanced Department (scroll to 0220 FLOWER CART for entire dept)</div>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>SORTING TAB (Best/Worst)</h4>
+        <div class="field-list">
+          <div class="field-chip"><span>Sort by</span> → Units Sold</div>
+          <div class="field-chip"><span>Order</span> → Ascending or Descending (default)</div>
+          <div class="field-chip"><span>Best/Worst Sellers Quantity</span> → enter Top (XX)</div>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>OPTIONS 1 TAB</h4>
+        <div class="field-list">
+          <div class="field-chip"><span>Default √</span> UPC Detail</div>
+          <div class="field-chip">Movement Detail (breaks down by day)</div>
+          <div class="field-chip">Include Zero Movers</div>
+          <div class="field-chip" style="border-color:var(--green)">Print Long Description</div>
+          <div class="field-chip" style="border-color:var(--green)">Category Details</div>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Process → Print</h4>
+        <p>Click <strong>Process</strong> → then "Report to printer" or "Show on screen" (must select print again to print from screen).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison -->
+  <div class="sub-panel" id="sub-report-comparison">
+    <div class="steps-title">Date Comparison Report</div>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:20px">Path: <code>BRData Store → Reports → 1 Sales Movement History</code></p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Enter From Date &amp; To Date → check off "Comparison Dates"</h4>
+        <p>Checking Comparison Dates unlocks a second set of date fields for the comparison period.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>QUERY TAB — Process By (same as General)</h4>
+        <div class="field-list">
+          <div class="field-chip">*UPC</div>
+          <div class="field-chip">*Category/Sub Code</div>
+          <div class="field-chip">*Enhanced Department (scroll to 0220 FLOWER CART)</div>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>SORTING &amp; OPTIONS 1 — same as General Report</h4>
+        <div class="danger">⚠️ <strong>Category Details DOES NOT WORK in a Comparison Report.</strong> Do not check this option.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Process → Print</h4>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top/Worst Sellers -->
+  <div class="sub-panel" id="sub-report-topsellers">
+    <div class="steps-title">Top or Worst Sellers Report</div>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:20px">Path: <code>BRData Store → Reports → 1 Sales Movement History</code></p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Enter From Date &amp; To Date</h4>
+        <p>(Check Comparison Dates to add a 2nd set of dates for comparison.)</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>QUERY TAB — Process By</h4>
+        <div class="field-list">
+          <div class="field-chip">*UPC</div>
+          <div class="field-chip">*Category/Sub Code</div>
+          <div class="field-chip">*Enhanced Department (scroll to 0220 FLOWER CART)</div>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>SORTING TAB</h4>
+        <div class="field-list">
+          <div class="field-chip"><span>Select</span> Units Sold</div>
+          <div class="field-chip"><span>Order</span> Ascending or Descending</div>
+          <div class="field-chip"><span>Best/Worst Sellers Quantity</span> → enter (##)</div>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>OPTIONS 1 TAB — same options as General</h4>
+        <div class="danger">⚠️ <strong>Category Details DOES NOT WORK in a Comparison.</strong></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Process → Print</h4>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ REFERENCE ══════ -->
+<div class="tab-panel" id="tab-reference">
+  <div class="page-title" style="color:var(--ref-color)">Reference</div>
+  <div class="page-subtitle">Codes, IDs, tax rules, and quick lookups for everyday use.</div>
+
+  <!-- Store Numbers -->
+  <div class="ref-section">
+    <div class="ref-section-title" style="color:var(--accent)">Store Numbers</div>
+    <table>
+      <thead><tr><th>Store #</th><th>Location</th><th>System ID</th></tr></thead>
+      <tbody>
+        <tr><td>3</td><td class="dept-name">Portsmouth</td><td>000003</td></tr>
+        <tr><td>4</td><td class="dept-name">Bristol</td><td>000004</td></tr>
+        <tr><td>—</td><td class="dept-name">All Stores (HOST)</td><td>00000A</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Department IDs -->
+  <div class="ref-section">
+    <div class="ref-section-title" style="color:var(--accent2)">Department IDs</div>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">Red = taxable departments (in the original guide). Blue = Sushi.</p>
+    <table>
+      <thead><tr><th>Dept #</th><th>Department Name</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td class="dept-red">10</td><td class="dept-name">Grocery</td><td></td></tr>
+        <tr><td class="dept-red">15</td><td class="dept-name">Natural Foods (Specialty)</td><td></td></tr>
+        <tr><td class="dept-red">20</td><td class="dept-name">Taxable Grocery</td><td>Taxable</td></tr>
+        <tr><td class="dept-red">50</td><td class="dept-name">General Merchandise</td><td>Taxable</td></tr>
+        <tr><td>60</td><td class="dept-name">Meat (Butchers Block)</td><td></td></tr>
+        <tr><td>65</td><td class="dept-name">Seafood (By the Sea)</td><td></td></tr>
+        <tr><td>70</td><td class="dept-name">Produce (Natures Harvest)</td><td></td></tr>
+        <tr><td class="dept-red">80</td><td class="dept-name">Dairy</td><td></td></tr>
+        <tr><td>90</td><td class="dept-name">Imported Cheese</td><td></td></tr>
+        <tr><td class="dept-red">100</td><td class="dept-name">Frozen Foods</td><td></td></tr>
+        <tr><td class="dept-red">120</td><td class="dept-name">Health Beauty Care</td><td>Taxable</td></tr>
+        <tr><td>130</td><td class="dept-name">Packaged Meat</td><td></td></tr>
+        <tr><td>140</td><td class="dept-name">Cutting Board (Deli)</td><td></td></tr>
+        <tr><td>145</td><td class="dept-name">Rustic Kitchen (Prep)</td><td></td></tr>
+        <tr><td>150</td><td class="dept-name">Cafe (Blue Lobster)</td><td></td></tr>
+        <tr><td class="dept-blue">170</td><td class="dept-name">Sushi</td><td></td></tr>
+        <tr><td>175</td><td class="dept-name">Bake Shop</td><td></td></tr>
+        <tr><td class="dept-red">210</td><td class="dept-name">Vender Bakery</td><td>Taxable</td></tr>
+        <tr><td>215</td><td class="dept-name">Starfish Bakery</td><td></td></tr>
+        <tr><td>220</td><td class="dept-name">Floral</td><td>Enhanced Dept code: 0220 FLOWER CART</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tax Rules -->
+  <div class="ref-section">
+    <div class="ref-section-title" style="color:var(--accent3)">Tax Rules (BRData Store)</div>
+    <table class="tax-table">
+      <thead><tr><th>Product Type</th><th>Rule</th><th>TAX?</th></tr></thead>
+      <tbody>
+        <tr><td>Juice — 49% juice or less</td><td>Low juice content</td><td class="tax-yes">TAX</td></tr>
+        <tr><td>Juice — 50% or more</td><td>High juice content</td><td class="tax-no">NO TAX</td></tr>
+        <tr><td>Candy — No flour</td><td>e.g. gummy bears, hard candy</td><td class="tax-yes">TAX</td></tr>
+        <tr><td>Candy — With flour</td><td>e.g. Kit Kat, Twix</td><td class="tax-no">NO TAX</td></tr>
+        <tr><td>Water — Flavored (sugar added)</td><td>Sweetened flavored water</td><td class="tax-yes">TAX</td></tr>
+        <tr><td>Water — Sparkling</td><td>Plain sparkling</td><td class="tax-no">NO TAX</td></tr>
+        <tr><td>Water — Plain</td><td>Still / unflavored</td><td class="tax-no">NO TAX</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Priority Codes -->
+  <div class="ref-section">
+    <div class="ref-section-title" style="color:var(--green)">Priority Codes</div>
+    <table>
+      <thead><tr><th>Code</th><th>Name</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td>50</td><td class="dept-name">Manager Priority</td><td>Used for Manager Instore sales</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Key Dates -->
+  <div class="ref-section">
+    <div class="ref-section-title" style="color:var(--accent)">Key System Dates</div>
+    <table>
+      <thead><tr><th>Date</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>12/01/2029</td><td class="dept-name">"While Supplies Last" end date — used for Manager Instore sales (Price End Date)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Batch Mode Reference -->
+  <div class="ref-section">
+    <div class="ref-section-title" style="color:var(--accent2)">Batch Mode Reference</div>
+    <table>
+      <thead><tr><th>Batch Mode</th><th>Use For</th></tr></thead>
+      <tbody>
+        <tr><td>Future Retail Price</td><td class="dept-name">Price changes (current day and future dates)</td></tr>
+        <tr><td>Frequent Shopper</td><td class="dept-name">Manager Instore sales (applies via Shoppers Card)</td></tr>
+        <tr><td>Tag Batch</td><td class="dept-name">Adding UPCs just for printing tags/signs (does NOT change price or item info)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- UPC Quick Reference -->
+  <div class="ref-section">
+    <div class="ref-section-title" style="color:var(--text-muted)">UPC Entry Rules</div>
+    <table>
+      <thead><tr><th>UPC Type</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Short UPC</td><td class="dept-name">Drop the <strong>first</strong> small digit</td></tr>
+        <tr><td>Long UPC (European)</td><td class="dept-name">Drop the <strong>last</strong> digit</td></tr>
+        <tr><td>Unsure</td><td class="dept-name">Always scan it when done to verify</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+</div><!-- /content -->
+
+<script>
+// ── Tab switching ──
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  });
+});
+
+// ── Sub-tab switching (scoped to active panel) ──
+document.querySelectorAll('.sub-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const sub = btn.dataset.sub;
+    const parent = btn.closest('.tab-panel');
+    parent.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+    parent.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('sub-' + sub).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
