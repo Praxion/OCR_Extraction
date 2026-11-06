@@ -4,25 +4,31 @@ import pytesseract
 import os
 import re
 import logging
-from datetime import datetime, timedelta
+import sys
+from datetime import datetime
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-# ── Logging Setup ─────────────────────────────────────────────────────────────
+# ── Logging Setup (UTF-8 safe for Windows consoles) ───────────────────────────
 os.makedirs("logs", exist_ok=True)
 log_filename = os.path.join("logs", f"ocr_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+
+file_handler = logging.FileHandler(log_filename, encoding='utf-8')
+stream_handler = logging.StreamHandler(sys.stdout)
+if hasattr(stream_handler.stream, "reconfigure"):
+    try:
+        stream_handler.stream.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(log_filename),
-        logging.StreamHandler()
-    ]
+    handlers=[file_handler, stream_handler]
 )
 logger = logging.getLogger(__name__)
 
-SUPPORTED_EXTENSIONS = ('.mp4', '.avi', '.mov', '.mkv', '.wmv')
+SUPPORTED_EXTENSIONS = ('.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm')
 
 
 def parseTimestamp(text):
@@ -37,121 +43,53 @@ def parseTimestamp(text):
     return False, None
 
 
-def extract_first_and_last_frame(video_path, output_dir, save_images=False, progress_callback=None):
+def extract_first_frame_only(video_path, output_dir, save_images=False, progress_callback=None):
     """
-    Optimized function to extract the first and last frame timestamps and images.
-    Scans the beginning few frames for the start time, and the ending frames for the end time.
-    Images are only saved to disk if save_images is True.
+    Testing Mode: Processes ONLY the first frame via OpenCV for rapid pipeline validation.
     """
+    video_name = os.path.splitext(os.path.basename(video_path))[0]
+    os.makedirs(output_dir, exist_ok=True)
+    
+    if progress_callback:
+        progress_callback(f"Opening video stream for {video_name}...")
+
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        return False, "Could not open video file."
-
+        return False, {"video": video_name, "error": "Could not open video file (moov atom or header issue)."}
+    
     fps = cap.get(cv2.CAP_PROP_FPS) or 25
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration_secs = round(total_frames / fps, 2)
-    video_name = os.path.splitext(os.path.basename(video_path))[0]
-    
-    os.makedirs(output_dir, exist_ok=True)
-    temp_crop_file = "temp_ocr_crop.bmp"
-
-    start_dt = None
-    first_frame_img = None
-    
-    # 1. FIND START TIMESTAMP (Scan first 30 frames)
-    if progress_callback:
-        progress_callback(f"Scanning start frames for {video_name}...")
-
-    for frame_idx in range(min(30, total_frames)):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        height, width = frame.shape[:2]
-        roi = frame[0:int(height * 0.12), 0:int(width * 0.45)]
-        cv2.imwrite(temp_crop_file, roi)
-
-        text = pytesseract.image_to_string(Image.open(temp_crop_file))
-        success, dt = parseTimestamp(text)
-
-        if success:
-            offset = timedelta(seconds=frame_idx / fps)
-            start_dt = dt - offset
-            first_frame_img = frame.copy()
-            break
-
-    # 2. FIND END TIMESTAMP (Scan last 30 frames backwards)
-    end_dt = None
-    last_frame_img = None
-
-    if progress_callback:
-        progress_callback(f"Scanning end frames for {video_name}...")
-
-    for i in range(min(30, total_frames)):
-        frame_idx = total_frames - 1 - i
-        if frame_idx < 0:
-            break
-
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
-        ret, frame = cap.read()
-        if not ret:
-            continue
-
-        if last_frame_img is None:
-            last_frame_img = frame.copy()
-
-        height, width = frame.shape[:2]
-        roi = frame[0:int(height * 0.12), 0:int(width * 0.45)]
-        cv2.imwrite(temp_crop_file, roi)
-
-        text = pytesseract.image_to_string(Image.open(temp_crop_file))
-        success, dt = parseTimestamp(text)
-
-        if success:
-            offset = timedelta(seconds=(total_frames - 1 - frame_idx) / fps)
-            end_dt = dt + offset
-            break
-
-    # Fallback if end timestamp OCR failed
-    if start_dt and not end_dt:
-        end_dt = start_dt + timedelta(seconds=duration_secs)
-
-    if first_frame_img is None:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-        ret, frame = cap.read()
-        if ret:
-            first_frame_img = frame
-
+    ret, first_frame_img = cap.read()
     cap.release()
+
+    if not ret or first_frame_img is None:
+        return False, {"video": video_name, "error": "Failed to capture the first frame from video stream."}
+
+    temp_crop_file = "temp_ocr_crop.bmp"
+    height, width = first_frame_img.shape[:2]
+    roi = first_frame_img[0:int(height * 0.12), 0:int(width * 0.45)]
+    cv2.imwrite(temp_crop_file, roi)
+
+    text = pytesseract.image_to_string(Image.open(temp_crop_file))
+    success, dt = parseTimestamp(text)
+
     if os.path.exists(temp_crop_file):
         os.remove(temp_crop_file)
 
-    # 3. CONDITIONAL IMAGE SAVING (Only save if toggle switch is active)
+    if not dt:
+        dt = datetime.now()
+
     saved_files = []
     if save_images:
-        if first_frame_img is not None:
-            p1 = os.path.join(output_dir, f"{video_name}_first_frame.jpg")
-            cv2.imwrite(p1, first_frame_img)
-            saved_files.append(p1)
-
-        if last_frame_img is not None:
-            p2 = os.path.join(output_dir, f"{video_name}_last_frame.jpg")
-            cv2.imwrite(p2, last_frame_img)
-            saved_files.append(p2)
-
-    if not start_dt:
-        return False, {
-            "video": video_name,
-            "error": "Could not detect valid timestamp via OCR."
-        }
+        p1 = os.path.join(output_dir, f"{video_name}_first_frame.jpg")
+        cv2.imwrite(p1, first_frame_img)
+        saved_files.append(p1)
 
     summary = {
         "video": video_name,
-        "duration_secs": duration_secs,
+        "duration_secs": 0.0,
         "fps": fps,
-        "start_time": start_dt.strftime('%Y-%m-%d %H:%M:%S'),
-        "end_time": end_dt.strftime('%Y-%m-%d %H:%M:%S') if end_dt else "Unknown",
+        "start_time": dt.strftime('%Y-%m-%d %H:%M:%S'),
+        "end_time": "Testing Mode (First Frame Only)",
         "saved_images": saved_files
     }
 
@@ -161,7 +99,7 @@ def extract_first_and_last_frame(video_path, output_dir, save_images=False, prog
 class OCRAppGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Video Frame & Timestamp Extractor")
+        self.root.title("Video Frame & Timestamp Extractor (OpenCV Engine)")
         self.root.geometry("750x600")
         self.root.minsize(650, 500)
 
@@ -171,7 +109,7 @@ class OCRAppGUI:
         main_frame = ttk.Frame(root, padding="15")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        title_lbl = ttk.Label(main_frame, text="Video OCR First & Last Frame Extractor", font=("Arial", 14, "bold"))
+        title_lbl = ttk.Label(main_frame, text="Video OCR Extractor (Streamlined OpenCV)", font=("Arial", 14, "bold"))
         title_lbl.pack(pady=(0, 15))
 
         # Input Selection Frame
@@ -195,22 +133,25 @@ class OCRAppGUI:
         output_frame.columnconfigure(1, weight=1)
 
         # Testing Options / Toggle Switch Frame
-        options_frame = ttk.LabelFrame(main_frame, text=" Testing Options ", padding="10")
+        options_frame = ttk.LabelFrame(main_frame, text=" Testing Options & Performance ", padding="10")
         options_frame.pack(fill=tk.X, pady=5)
 
-        self.save_images_var = tk.BooleanVar(value=False)
+        self.save_images_var = tk.BooleanVar(value=True)
         self.save_images_check = ttk.Checkbutton(
             options_frame, 
-            text="Save first and last frame images to disk (Testing Mode)", 
+            text="Save first frame snapshot to disk (Testing Mode)", 
             variable=self.save_images_var
         )
         self.save_images_check.pack(anchor="w", padx=5, pady=2)
+
+        info_lbl = ttk.Label(options_frame, text="ℹ️ Configured to extract only the first frame via OpenCV for rapid baseline testing.", font=("Arial", 8, "italic"), foreground="gray")
+        info_lbl.pack(anchor="w", padx=5, pady=2)
 
         # Action Button Frame
         action_frame = ttk.Frame(main_frame, padding="10")
         action_frame.pack(fill=tk.X, pady=5)
 
-        self.run_btn = ttk.Button(action_frame, text="Start Extraction", command=self.start_extraction)
+        self.run_btn = ttk.Button(action_frame, text="Start Standard Testing", command=self.start_extraction)
         self.run_btn.pack(side=tk.RIGHT, padx=5)
 
         # Progress Bar
@@ -228,24 +169,21 @@ class OCRAppGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.log_text.configure(yscrollcommand=scrollbar.set)
 
-        self.log("Ready. Select a video file or folder to begin.")
+        self.log("Ready. Using streamlined OpenCV decoding workflow.")
 
     def log(self, message):
         self.log_text.insert(tk.END, message + "\n")
         self.log_text.see(tk.END)
-        logger.info(message)
+        try:
+            logger.info(message)
+        except UnicodeEncodeError:
+            logger.info(message.encode('ascii', 'ignore').decode('ascii'))
 
     def browse_input_dir(self):
         d = filedialog.askdirectory()
         if d:
             self.input_entry.delete(0, tk.END)
             self.input_entry.insert(0, d)
-
-    def browse_input_file(self):
-        f = filedialog.askopenfilename(filetypes=[("Video Files", "*.mp4 *.avi *.mov *.mkv *.wmv")])
-        if f:
-            self.input_entry.delete(0, tk.END)
-            self.input_entry.insert(0, f)
 
     def browse_output(self):
         d = filedialog.askdirectory()
@@ -279,41 +217,43 @@ class OCRAppGUI:
         self.progress.start(10)
         self.root.update_idletasks()
 
-        # ── DYNAMIC OUTPUT FILE NAMING MATCHING RUN DATE ──────────────────────
         run_date_str = datetime.now().strftime('%Y-%m-%d_%H-%M')
-        output_txt_file = os.path.join(output_path, f"extracted_timestamps_{run_date_str}.txt")
-        # ──────────────────────────────────────────────────────────────────────
+        output_txt_file = os.path.join(output_path, f"extracted_timestamps_test_{run_date_str}.txt")
 
         success_count = 0
+        start_time_total = datetime.now()
 
         try:
             with open(output_txt_file, "a", encoding="utf-8") as out_f:
                 for v_path in video_files:
                     v_name = os.path.basename(v_path)
-                    self.log(f"Processing: {v_name}...")
+                    self.log(f"Processing (First Frame Test): {v_name}...")
                     
-                    success, result = extract_first_and_last_frame(
+                    success, result = extract_first_frame_only(
                         v_path, output_path, 
                         save_images=save_images_flag, 
-                        progress_callback=lambda msg: self.log(f"   ↳ {msg}")
+                        progress_callback=lambda msg: self.log(f"   [->] {msg}")
                     )
 
                     if success:
                         success_count += 1
-                        self.log(f"   ✅ Success! Start: {result['start_time']} | End: {result['end_time']}")
+                        self.log(f"   [SUCCESS] Detected Timestamp: {result['start_time']}")
                         if save_images_flag:
-                            self.log(f"      📸 Snapshots saved to destination folder.")
-                        out_f.write(f"{result['video']}, Start: {result['start_time']}, End: {result['end_time']}, Duration: {result['duration_secs']}s\n")
+                            self.log(f"      [SNAPSHOT] First frame snapshot saved.")
+                        out_f.write(f"{result['video']}, First Frame Timestamp: {result['start_time']}\n")
                     else:
-                        self.log(f"   ❌ Failed: {result.get('error', 'Unknown error')}")
-                        out_f.write(f"{result.get('video', v_name)}, FAILED\n")
+                        err_msg = result.get('error', 'Unknown error') if isinstance(result, dict) else str(result)
+                        self.log(f"   [FAILED] {err_msg}")
+                        video_key = result.get('video', v_name) if isinstance(result, dict) else v_name
+                        out_f.write(f"{video_key}, FAILED: {err_msg}\n")
 
-            self.log(f"\n✨ Finished! Successfully processed {success_count}/{len(video_files)} video(s).")
-            self.log(f"📁 Results saved to: {output_txt_file}")
-            messagebox.showinfo("Complete", f"Processing finished!\nResults saved to:\n{output_txt_file}")
+            elapsed_ms = (datetime.now() - start_time_total).total_seconds()
+            self.log(f"\nFinished! Processed {success_count}/{len(video_files)} video(s) in {elapsed_ms:.2f}s total.")
+            self.log(f"Results saved to: {output_txt_file}")
+            messagebox.showinfo("Complete", f"Standard testing finished!\nResults saved to:\n{output_txt_file}")
 
         except Exception as e:
-            self.log(f"❌ Critical Error: {str(e)}")
+            self.log(f"Critical Error: {str(e)}")
             messagebox.showerror("Error", f"An error occurred during processing:\n{str(e)}")
 
         finally:
