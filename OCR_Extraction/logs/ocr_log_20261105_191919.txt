@@ -1,3 +1,0 @@
-2026-11-05 19:19:20,113 [INFO] Ready. Using VLC-backed decoding workflow for legacy footage testing.
-2026-11-05 19:19:58,840 [INFO] Processing (First Frame Test): 16_h265_20261026183252.mp4...
-2026-11-05 19:19:58,858 [WARNING] VLC hardware/CLI extraction fallback triggered: [WinError 2] The system cannot find the file specified
